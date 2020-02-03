@@ -11,6 +11,11 @@ Aufbau Lambda [capture](params)
 //Function Pointers
 //Printing the Value of a Vector
 
+
+#include <algorithm>
+
+
+
 void PrintValue(int value){
     std::cout << "Value" << value<< std::endl;
 }
@@ -65,3 +70,20 @@ int main(){
     }  
 }
 
+
+
+// Funktioniert: Lambda sume
+std::vector<int> values = { 1,2,3,4,5,6,7,8,9 };
+auto sum = [](auto vec) {
+        int sum = 0;
+        for (auto& n : vec) {
+                sum += n;
+        }
+        return sum;
+};
+
+std::cout << "sum: " << sum(values) << "\n";
+              //den wert um je 1 erhöhen und erneut ausgeben
+std::for_each(values.begin(), values.end(), [](auto &val) {val++; });
+	
+	std::cout << "Sum: " << sum(values) << "\n";
