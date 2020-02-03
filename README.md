@@ -5,4 +5,5 @@ operator>>    file:operator.cpp \
 operator+     file:operator.cpp \
 complex       file:operator.cpp \
 substr        file:RotateString.cpp \
+random vecor  file:vector.cpp
 
