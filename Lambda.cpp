@@ -87,3 +87,24 @@ std::cout << "sum: " << sum(values) << "\n";
 std::for_each(values.begin(), values.end(), [](auto &val) {val++; });
 	
 	std::cout << "Sum: " << sum(values) << "\n";
+
+
+
+//Beispiel LambdaCalc
+#include <iostream>
+#include <cassert>
+int main() {
+	auto calc = [](int a, int b, char op) ->double {
+		switch (op) {
+		case '+': return static_cast<double>(a) + static_cast<double>(b);
+		case '-': return static_cast<double>(a) - static_cast<double>(b);
+		case '/': return static_cast<double>(a) / static_cast<double>(b);
+		case '*': return static_cast<double>(a) * static_cast<double>(b);
+		default: assert("falscher operator");
+		}
+	};
+	//test
+	int a = 5, b = 6;
+	char op = '+';
+	std::cout << calc(a, b, op);
+}
