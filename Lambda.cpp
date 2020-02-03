@@ -108,3 +108,34 @@ int main() {
 	char op = '+';
 	std::cout << calc(a, b, op);
 }
+
+
+//checks if even or odd and if a value ist bigger than the boundry-value
+#include "pch.h"
+#include <iostream>
+#include <vector>
+#include <ctime>
+#include <algorithm>
+
+int main()
+{
+	std::vector<int> values{};
+	for (auto i = 0; i < 20; i++) {
+		values.push_back(rand() % 50);
+	}
+	int bigger = 0, even = 0, boundry = 25;
+	[&bigger, &even, boundry](std::vector<int> values) {
+		for (auto c : values) {
+			if ((c % 2) == 0) {
+				even++;
+			}
+			if (c > boundry) {
+				bigger++;
+			}
+		}
+	}(values);
+	
+	
+	std::cout << "even: " << even << " odd:" << values.size() - even << std::endl;
+	std::cout << "bigger: " << bigger << " smaler:" << values.size() - bigger << std::endl;
+	
