@@ -1,0 +1,280 @@
+//-----Physics.cpp--------------------------------
+#include <iostream>
+
+#include <vector>				//wenn variable größe da steht
+#include <algorithm>			//wegen transform
+#include"Distance.h"
+#include "mmDistance.h"
+#include "IStringable.h"
+
+
+using namespace std;
+
+int main()
+{
+	Distance m1 = 12.3;
+	Distance m2 = 45.6;
+
+	mmDistance mm1 = 32.1;
+	mmDistance mm2 = 65.4;
+
+
+	Distance m3 = m2;
+	Distance mm3 = mm2;
+
+	Distance m4 = mm1;
+	mmDistance mm4 = m1;
+
+	Distance m5(12.45, "cm");
+	Distance m6(12.45, "dm");
+	Distance m7(m6, "m");
+
+
+	std::string s1 = m4.to_string();
+	std::string s2 = mm4.to_string();
+
+	std::cout << m4 << std::endl;
+	std::cout << mm4 << std::endl;
+
+
+	std::vector<shared_ptr<Distance>> vec;		//shared pointer auf Distance klasse
+
+	vec.push_back(std::make_shared<Distance>(12.3));
+	vec.push_back(std::make_shared<Distance>(23.43));
+	vec.push_back(std::make_shared<Distance>(98.5));
+	vec.push_back(std::make_shared<Distance>(87.6));
+	
+
+	double factor = 2.5;
+	std::transform(vec.begin(), vec.end(), vec.begin(),				/* Reihenfolge von transform -> von wo, bis wohin, wo sollen sie abgegeben werden (in dem fall am anfang)*/
+		[factor](std::shared_ptr<Distance>& sp)
+		{
+			if (sp->getUnit() == "mm")
+			{
+				sp->setValue(sp->getValue() * factor);
+			}
+		return sp;
+		}
+		);
+
+	for (std::shared_ptr<Distance>& v : vec)
+	{
+		std::cout << *v << std::endl;			//unbedingt punkoperator, damit wir auf das element vom zeiger draufgreifen
+		std::cout << std::string(30, '-') << std::endl;
+	}
+	
+
+	std::sort(vec.begin(), vec.end(), [](std::shared_ptr<Distance>& a, std::shared_ptr<Distance>& b)	//auf SI ungewandelt und dann leichter zu sortieren
+	{
+		return a->getSIValue() < b->getSIValue();
+	});
+
+	
+	for (std::shared_ptr<Distance>& v : vec)		//2mal 
+	{
+		std::cout << *v << std::endl;			//unbedingt punkoperator, damit wir auf das element vom zeiger draufgreifen
+		std::cout << std::string(30, '-') << std::endl;
+	}
+
+
+	try {
+		Distance e1 = 12.34;
+		Distance e2 = -12.34;
+	}
+
+	catch (UnitUnderflowError e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+catch(...)		//fängt man alle fehler auf mit den ...
+		{
+			std::cerr << "unbekannter Fehler" << std::endl;
+		}
+}
+//----UnitUnderflowError.h-----------------------------------------------------
+#include "UnitUnderflowError.h"
+
+
+const char* UnitUnderflowError::what() const noexcept
+{
+	return this->str.c_str();		//c_str buffer vom string kann man zugreifen.. wegen char*
+}
+
+
+//----UnitUnderflowError.cpp--------------------------------------------
+#include "UnitUnderflowError.h"
+
+
+const char* UnitUnderflowError::what() const noexcept
+{
+	return this->str.c_str();		//c_str buffer vom string kann man zugreifen.. wegen char*
+}
+
+//-----UnitValue.h----------------------------
+
+#pragma once
+#include <string>
+#include "UnitUnderflowError.h"
+
+
+namespace JKUnit
+{
+	template <typename T>
+	class UnitValue
+	{
+		T value;
+		std::string unit;
+
+	public:
+		UnitValue(T v, const std::string& u)
+		{
+			setValue(v);
+			unit = u;
+		}
+
+		T getValue() const
+		{
+			return value;
+		}
+
+		void setValue(T v) {
+			if (v < 0)
+				throw UnitUnderflowError("UnitValue=" + std::to_string(v));
+			value = v;
+		}
+
+		std::string getUnit() const {
+			return unit;
+		}
+
+	};
+};
+
+//----mmDistance.h----------------------------------------------
+#pragma once
+#include "Distance.h"
+
+
+class mmDistance :
+	public Distance
+{
+public:
+	mmDistance(double val) 
+		: Distance(val, "mm")
+	{
+	}
+
+	mmDistance(const Distance& o) 
+		: Distance(o, "mm")						// o.getValue() * 1000 könnte auch geheb um Konstrktor
+	{
+
+	}
+	
+
+	std::string to_string() const
+	{
+		return "mmDistance: " + getUnitValueAsString();
+	}
+};
+
+
+
+//----Istringeable.h--------------------------------------------------
+
+#pragma once
+#include <string>
+
+class IStringable
+{
+public:
+	virtual std::string  to_string() const = 0;		// virtual weil es abstrakt ist
+	
+};
+
+
+
+
+
+//------Distance.cpp----------------------------------
+#include "Distance.h"
+
+
+
+std::map<std::string, double> Distance::cfac =
+{
+	{"km", 1000},
+	{"m", 1.},
+	{"dm", 0.1},
+	{"cm", 0.01},
+	{"mm", 000.1}
+};
+
+
+
+//-----Distance.h---------------------------------------------
+#pragma once
+
+#include <map>
+#include <iostream>
+
+#include "UnitValue.h"
+#include "IStringable.h"
+
+
+
+class Distance : public JKUnit::UnitValue <double>, public IStringable
+{
+	static std::map<std::string, double> cfac;
+
+public:
+	Distance(double val, const std::string& u = "m") 
+		: UnitValue(val, u)
+	{ 
+	}
+
+	Distance (const Distance& o, const std::string& u = "m")
+		: UnitValue( SI2Unit(Unit2SI(o.getValue(), o.getUnit()), u), u)					//könnte man wieder hier mit 1000 multipli..
+	{	
+	}
+
+	static double SI2Unit(double v, const std::string & u)		// umrechnung mit der Distance.cpp   si to Unit
+	{
+		return v / cfac.at(u);
+	}
+
+	static double Unit2SI(double v, const std::string& u)		// unit to si
+	{
+		return v * cfac.at(u);
+	}
+
+	double getSIValue() const 
+	{
+		return Unit2SI(this->getValue(), this->getUnit());		// immer in ein SI wert geändert leichter zu vergleichen meter mit meter
+	}
+
+
+
+	virtual std::string getUnitValueAsString() const
+	{
+		return std::to_string(this->getValue()) + " " + this->getUnit();
+	}
+
+	std::string to_string() const
+	{
+		return "Distance: " + getUnitValueAsString();
+	}
+
+
+	// friend  std::ostream& operator <<(std::ostream& os, const Distance& d);	nur wenn es mit protected geschutzt sein sollte
+
+
+};
+
+inline std::ostream& operator <<(std::ostream& os, const Distance& d)			//Überschreiben Sie den << Operator Ihrer Distanzklassen,
+																					//um den Rückgabewert von
+																					//to_string, spät gebunden, auf die Console auszugeben.
+	{
+		os << d.to_string();
+		return os;
+
+	}
